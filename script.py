@@ -2,6 +2,7 @@ import obspython as obs
 import urllib.request
 import urllib.error
 import win32gui
+import lib
 from contextlib import contextmanager
 
 @contextmanager
@@ -47,8 +48,9 @@ def reorder():
 				if source_id == 'window_capture':
 					settings = obs.obs_source_get_settings(source)
 					window_name = obs.obs_data_get_string(settings, "window")
-					print(window_name.split(':')[0])
-					print(win32gui.FindWindowEx(None, None, None, (window_name.split(':')[0])))
+					decoded_name = lib.decode_string(window_name.split(':')[0])
+					print(decoded_name)
+					print(win32gui.FindWindow(None, decoded_name))
 					order.append({"index": i, "name": name, "scene_item": s})
 				# change second index with pre last
 				# order[1]["index"], order[-2]["index"] = (
