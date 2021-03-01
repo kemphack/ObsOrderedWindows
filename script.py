@@ -3,6 +3,8 @@ import urllib.request
 import urllib.error
 import win32gui
 import lib
+import myconverter
+import typing
 from contextlib import contextmanager
 
 @contextmanager
@@ -21,7 +23,6 @@ def scene_ar(scene):
     finally:
         obs.obs_scene_release(scene)
 
-
 def update_windows():
 	# sources = obs.obs_enum_sources()
 	# print('new update')
@@ -39,6 +40,7 @@ def update_windows():
 def reorder():
 	current_scene = obs.obs_frontend_get_current_scene()
 	order = list()
+	windows_in_order = lib.windows_ordered()
 	with scene_ar(current_scene) as scene:
 		with scene_enum(scene) as scene_items:
 			for i, s in enumerate(scene_items):
@@ -46,23 +48,21 @@ def reorder():
 				name = obs.obs_source_get_name(source)
 				source_id = obs.obs_source_get_unversioned_id(source)
 				if source_id == 'window_capture':
-					settings = obs.obs_source_get_settings(source)
-					window_name = obs.obs_data_get_string(settings, "window")
-					decoded_name = lib.decode_string(window_name.split(':')[0])
-					print(decoded_name)
-					print(win32gui.FindWindow(None, decoded_name))
-					order.append({"index": i, "name": name, "scene_item": s})
-				# change second index with pre last
-				# order[1]["index"], order[-2]["index"] = (
-				# 		order[-2]["index"],
-				# 		order[1]["index"],
-				# )
-				# for s in sorted(order, key=lambda i: i["index"]):
-				# 		obs.obs_sceneitem_set_order_position(s["scene_item"], s["index"])
-	print(order)
+					properties = obs.obs_source_properties(source)
+					handle = myconverter.void_to_window(obs.obs_properties_get_param(properties))
+					print(win32gui.GetWindowText(handle))
+					order.append({"index": i, "name": name, "scene_item": s, "z": windows_in_order.get(handle)})
+	#sorting
+	order = list(filter(lambda i: i["z"] != None, order))
+	indexes = list(map(lambda i: i["index"], order))
+	ordered = sorted(order, key=lambda i: -i["z"])
+	print(ordered)
+	# print(ordered)
+	for i, s in enumerate(ordered):
+			obs.obs_sceneitem_set_order_position(s["scene_item"], indexes[i])
 
-interval = 5
-obs.timer_add(update_windows, interval * 1000)
+
+obs.timer_add(update_windows, 1000)
 # ------------------------------------------------------------
 
 def script_description():
@@ -71,8 +71,8 @@ def script_description():
 # def script_update(settings):
 	
 
-def script_defaults(settings):
-	obs.obs_data_set_default_int(settings, "interval", interval)
+# def script_defaults(settings):
+	# obs.obs_data_set_default_int(settings, "interval", interval)
 
 def script_properties():
 	props = obs.obs_properties_create()
