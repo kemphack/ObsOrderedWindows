@@ -1,7 +1,4 @@
 import obspython as obs
-import urllib.request
-import urllib.error
-import win32gui
 import lib
 import myconverter
 import typing
@@ -24,17 +21,6 @@ def scene_ar(scene):
         obs.obs_scene_release(scene)
 
 def update_windows():
-	# sources = obs.obs_enum_sources()
-	# print('new update')
-	# print(sources)
-	# print('ids')
-	# if sources is not None:
-	# 	for source in sources:
-	# 		source_id = obs.obs_source_get_unversioned_id(source)
-	# 		if source_id == 'window_cupture':
-	# 			print(source)
-
-	# 	obs.source_list_release(sources)
 	reorder()
 
 def reorder():
@@ -45,31 +31,27 @@ def reorder():
 		with scene_enum(scene) as scene_items:
 			for i, s in enumerate(scene_items):
 				source = obs.obs_sceneitem_get_source(s)
-				name = obs.obs_source_get_name(source)
 				source_id = obs.obs_source_get_unversioned_id(source)
 				if source_id == 'window_capture':
 					properties = obs.obs_source_properties(source)
 					handle = myconverter.void_to_window(obs.obs_properties_get_param(properties))
-					print(win32gui.GetWindowText(handle))
-					order.append({"index": i, "name": name, "scene_item": s, "z": windows_in_order.get(handle)})
+					order.append({"index": i, "scene_item": s, "z": windows_in_order.get(handle)})
 	#sorting
 	order = list(filter(lambda i: i["z"] != None, order))
 	indexes = list(map(lambda i: i["index"], order))
 	ordered = sorted(order, key=lambda i: -i["z"])
-	print(ordered)
-	# print(ordered)
+
 	for i, s in enumerate(ordered):
 			obs.obs_sceneitem_set_order_position(s["scene_item"], indexes[i])
 
-
-obs.timer_add(update_windows, 1000)
+update_interval = 1000
+obs.timer_add(update_windows, update_interval)
 # ------------------------------------------------------------
 
 def script_description():
 	return "Updates windows' order."
 
 # def script_update(settings):
-	
 
 # def script_defaults(settings):
 	# obs.obs_data_set_default_int(settings, "interval", interval)
@@ -77,27 +59,4 @@ def script_description():
 def script_properties():
 	props = obs.obs_properties_create()
 
-	# obs.obs_properties_add_text(props, "url", "URL", obs.OBS_TEXT_DEFAULT)
-	# obs.obs_properties_add_int(props, "interval", "Update Interval (seconds)", 5, 3600, 1)
-
-	# p = obs.obs_properties_add_list(props, "source", "Text Source", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
-	# sources = obs.obs_enum_sources()
-	# if sources is not None:
-	# 	for source in sources:
-	# 		source_id = obs.obs_source_get_unversioned_id(source)
-	# 		if source_id == "text_gdiplus" or source_id == "text_ft2_source":
-	# 			name = obs.obs_source_get_name(source)
-	# 			obs.obs_property_list_add_string(p, name, name)
-
-	# 	obs.source_list_release(sources)
-	# sources = obs.obs_enum_sources()
-	# print(sources)
-	# if sources is not None:
-	# 	for source in sources:
-	# 		source_id = obs.obs_source_get_unversioned_id(source)
-	# 		print(source_id)
-
-	# 	obs.source_list_release(sources)
-
-	# obs.obs_properties_add_button(props, "button", "Refresh", refresh_pressed)
 	return props
